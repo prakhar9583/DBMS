@@ -1,0 +1,140 @@
+CREATE DATABASE LibraryDB;
+USE LibraryDB;
+
+
+CREATE TABLE MembershipTiers (
+    TierID INT PRIMARY KEY,
+    TierName VARCHAR(50),
+    MaxLoans INT,
+    MaxDigitalAccess INT
+);
+
+
+CREATE TABLE Members (
+    MemberID INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Address VARCHAR(255),
+    Phone VARCHAR(15),
+    Email VARCHAR(100),
+    TierID INT,
+    DateOfBirth DATE,
+    FOREIGN KEY (TierID) REFERENCES MembershipTiers(TierID)
+);
+
+
+CREATE TABLE Resources (
+    ResourceID INT PRIMARY KEY,
+    Title VARCHAR(150),
+    Author VARCHAR(100),
+    Type VARCHAR(50),         -- e.g. Book, Magazine, Digital
+    Format VARCHAR(50),       -- e.g. PDF, Hardcover
+    AvailabilityStatus VARCHAR(20)
+);
+
+
+CREATE TABLE Loans (
+    LoanID INT PRIMARY KEY,
+    MemberID INT,
+    ResourceID INT,
+    LoanDate DATE,
+    ReturnDate DATE,
+    FOREIGN KEY (MemberID) REFERENCES Members(MemberID),
+    FOREIGN KEY (ResourceID) REFERENCES Resources(ResourceID)
+);
+
+
+CREATE TABLE DigitalAccess (
+    AccessID INT PRIMARY KEY,
+    MemberID INT,
+    ResourceID INT,
+    AccessDate DATE,
+    ExpiryDate DATE,
+    FOREIGN KEY (MemberID) REFERENCES Members(MemberID),
+    FOREIGN KEY (ResourceID) REFERENCES Resources(ResourceID)
+);
+
+
+
+INSERT INTO MembershipTiers VALUES
+(1, 'Standard', 3, 2),
+(2, 'Premium', 5, 5),
+(3, 'Elite', 10, 10);
+
+INSERT INTO Members (MemberID, Name, Address, Phone, Email, TierID, DateOfBirth) VALUES
+(101, 'Rahul Sharma', 'Mumbai, Maharashtra', '9876543210', 'rahul.sharma@example.com', 2, '1990-05-20'),
+(102, 'Anjali Mehta', 'Ahmedabad, Gujarat', '9871234567', 'anjali.mehta@example.com', 1, '1995-11-12'),
+(103, 'Rohit Verma', 'Delhi', '9988776655', 'rohit.verma@example.com', 3, '1988-08-08'),
+(104, 'Sneha Iyer', 'Chennai, Tamil Nadu', '9870098700', 'sneha.iyer@example.com', 2, '1992-07-15'),
+(105, 'Aman Kapoor', 'Kolkata, West Bengal', '9123456789', 'aman.kapoor@example.com', 1, '1993-03-03');
+
+INSERT INTO Resources VALUES
+(201, 'Wings of Fire', 'A.P.J. Abdul Kalam', 'Book', 'Paperback', 'Available'),
+(202, 'India 2020', 'A.P.J. Abdul Kalam', 'Book', 'Hardcover', 'Available'),
+(203, 'Digital India Report', 'NITI Aayog', 'Digital', 'PDF', 'Available'),
+(204, 'The Discovery of India', 'Jawaharlal Nehru', 'Book', 'Hardcover', 'Available'),
+(205, 'Indian Economy', 'Ramesh Singh', 'Book', 'Paperback', 'Available'),
+(206, 'e-Governance in India', 'Government of India', 'Digital', 'PDF', 'Available');
+
+INSERT INTO Loans VALUES
+(301, 101, 201, '2025-04-01', '2025-04-10'),
+(302, 104, 202, '2025-04-05', '2025-04-15'),
+(303, 101, 204, '2025-04-10', '2025-04-20'),
+(304, 103, 205, '2025-04-15', '2025-04-25'),
+(305, 101, 206, '2025-04-20', '2025-04-30');
+
+INSERT INTO DigitalAccess VALUES
+(401, 102, 203, '2025-03-01', '2025-04-01'),
+(402, 103, 203, '2025-03-15', '2025-04-15'),
+(403, 104, 206, '2025-04-01', '2025-05-01'),
+(404, 105, 203, '2025-04-10', '2025-05-10');
+
+
+SELECT * 
+FROM Members 
+WHERE TierID = 2;
+
+
+SELECT M.MemberID, M.Name, COUNT(L.LoanID) AS TotalLoans
+FROM Members M
+JOIN Loans L ON M.MemberID = L.MemberID
+GROUP BY M.MemberID, M.Name
+HAVING COUNT(L.LoanID) > 5;
+
+
+SELECT SUM(MaxLoans) AS TotalMaxLoans
+FROM MembershipTiers;
+
+
+SELECT 
+    M.Name AS MemberName,
+    R.Title AS ResourceTitle,
+    L.LoanDate
+FROM Loans L
+JOIN Members M ON L.MemberID = M.MemberID
+JOIN Resources R ON L.ResourceID = R.ResourceID
+ORDER BY L.LoanDate;
+
+
+
+DELIMITER $$
+
+CREATE TRIGGER MarkResourceUnavailable
+AFTER INSERT ON Loans
+FOR EACH ROW
+BEGIN
+    UPDATE Resources
+    SET AvailabilityStatus = 'Not Available'
+    WHERE ResourceID = NEW.ResourceID;
+END $$
+
+DELIMITER ;
+
+INSERT INTO Loans (LoanID, MemberID, ResourceID, LoanDate, ReturnDate)
+VALUES (306, 102, 203, '2025-05-01', '2025-05-10');
+
+
+ALTER TABLE Members
+ADD DOB DATE;
+
+
+

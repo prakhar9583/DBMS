@@ -1,0 +1,155 @@
+CREATE DATABASE IF NOT EXISTS RestaurantDB;
+USE RestaurantDB;
+
+
+CREATE TABLE Menu (
+    item_ID INT PRIMARY KEY AUTO_INCREMENT,
+    item_name VARCHAR(100),
+    category VARCHAR(50),
+    price DECIMAL(10,2)
+);
+
+CREATE TABLE Customers (
+    customer_ID INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    contact_number VARCHAR(15)
+);
+
+CREATE TABLE Orders (
+    order_ID INT PRIMARY KEY AUTO_INCREMENT,
+    customer_ID INT,
+    order_date_time DATETIME,
+    FOREIGN KEY (customer_ID) REFERENCES Customers(customer_ID)
+);
+
+CREATE TABLE OrderItems (
+    order_ID INT,
+    item_ID INT,
+    quantity INT,
+    unit_price DECIMAL(10,2),
+    PRIMARY KEY (order_ID, item_ID),
+    FOREIGN KEY (order_ID) REFERENCES Orders(order_ID),
+    FOREIGN KEY (item_ID) REFERENCES Menu(item_ID)
+);
+
+
+INSERT INTO Menu (item_name, category, price) VALUES
+('Paneer Butter Masala', 'Main Course', 220.00),
+('Chicken Biryani', 'Main Course', 250.00),
+('Masala Dosa', 'Snacks', 90.00),
+('Samosa', 'Snacks', 20.00),
+('Gulab Jamun', 'Dessert', 40.00),
+('Lassi', 'Beverage', 50.00);
+
+INSERT INTO Customers (name, contact_number) VALUES
+('Rahul Sharma', '9876543210'),
+('Priya Singh', '9123456789'),
+('Amit Verma', '9988776655');
+
+INSERT INTO Orders (customer_ID, order_date_time) VALUES
+(1, NOW() - INTERVAL 1 DAY),
+(2, NOW()),
+(3, NOW());
+
+INSERT INTO OrderItems (order_ID, item_ID, quantity, unit_price) VALUES
+(1, 1, 2, 220.00),
+(1, 5, 1, 40.00),
+(2, 2, 1, 250.00),
+(2, 6, 2, 50.00),
+(3, 3, 1, 90.00);
+
+
+SELECT 
+    m.category,
+    SUM(oi.quantity * oi.unit_price) AS total_sales
+FROM 
+    OrderItems oi
+JOIN 
+    Menu m ON oi.item_ID = m.item_ID
+GROUP BY 
+    m.category;
+
+
+
+DELIMITER $$
+
+CREATE PROCEDURE GetOrderDetails(IN input_order_ID INT)
+BEGIN
+    SELECT 
+        o.order_ID,
+        o.order_date_time,
+        c.name AS customer_name,
+        m.item_name,
+        oi.quantity,
+        oi.unit_price,
+        (oi.quantity * oi.unit_price) AS total_price
+    FROM 
+        Orders o
+    JOIN 
+        Customers c ON o.customer_ID = c.customer_ID
+    JOIN 
+        OrderItems oi ON o.order_ID = oi.order_ID
+    JOIN 
+        Menu m ON oi.item_ID = m.item_ID
+    WHERE 
+        o.order_ID = input_order_ID;
+END $$
+
+DELIMITER ;
+
+CALL GetOrderDetails(1);
+
+
+SELECT 
+    o.order_ID,
+    o.order_date_time,
+    c.name AS customer_name
+FROM 
+    Orders o
+JOIN 
+    Customers c ON o.customer_ID = c.customer_ID;
+
+
+SELECT 
+    m.item_ID,
+    m.item_name
+FROM 
+    Menu m
+LEFT JOIN 
+    OrderItems oi ON m.item_ID = oi.item_ID
+WHERE 
+    oi.item_ID IS NULL;
+
+
+CREATE VIEW Top3SellingItems AS
+SELECT 
+    m.item_ID,
+    m.item_name,
+    SUM(oi.quantity) AS total_quantity_sold
+FROM 
+    OrderItems oi
+JOIN 
+    Menu m ON oi.item_ID = m.item_ID
+GROUP BY 
+    m.item_ID, m.item_name
+ORDER BY 
+    total_quantity_sold DESC
+LIMIT 3;
+
+SELECT * FROM Top3SellingItems;
+
+
+SELECT 
+    *
+FROM 
+    Orders
+WHERE 
+    DATE(order_date_time) = CURDATE();
+
+
+
+
+
+
+
+
