@@ -28,3 +28,40 @@ Date,Close
 ```
 
 You can change `--lag` to control how many prior days are used as model features.
+
+---
+
+## Spam Email Classifier
+
+This repository also includes `spam_email_classifier.py`, a pure-Python spam filter based on **Multinomial Naive Bayes**.
+
+### What it does
+- Loads labeled emails from a CSV with `label` and `text` columns.
+- Tokenizes email text into a bag-of-words representation.
+- Trains a Multinomial Naive Bayes classifier with Laplace smoothing.
+- Evaluates on a stratified train/test split using:
+  - Accuracy
+  - Precision
+  - Recall
+  - F1-score
+- Optionally predicts whether a custom email text is spam or ham.
+
+### Run
+```bash
+python spam_email_classifier.py --csv emails.csv --test-ratio 0.2 --seed 42
+```
+
+### Classify one email after training
+```bash
+python spam_email_classifier.py --csv emails.csv --predict-text "Congratulations! You won a free gift card."
+```
+
+### CSV format
+```csv
+label,text
+ham,"Hi team, attached is the meeting agenda for tomorrow."
+spam,"Winner! Click now to claim your prize"
+...
+```
+
+Supported label values include `spam`/`ham` and `1`/`0`.
